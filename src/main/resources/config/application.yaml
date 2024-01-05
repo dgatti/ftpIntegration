@@ -1,0 +1,33 @@
+#Common App Properties
+http:
+  host: "0.0.0.0"
+  port: "8081"
+https:
+  host: "0.0.0.0"
+  port: "8082"
+
+api:
+  groupId:      "${api.groupId}"
+  artifactId:   "${api.artifactId}"
+  version:      "${api.version}"
+  spec:         ""
+  majorVersion: "v1"
+  
+json:
+  logger:
+    application:
+      name:     "${api.artifactId}"
+      version:  "${api.version}"
+
+
+until:
+  MaxRetries: "3"
+  MsBwRetries: "1000"
+  
+paralellForEach:
+  maxConcurrency: "10"
+  
+http-request:
+  timeout: "30000"
+  pnmSapiTimeout: "700000"
+  

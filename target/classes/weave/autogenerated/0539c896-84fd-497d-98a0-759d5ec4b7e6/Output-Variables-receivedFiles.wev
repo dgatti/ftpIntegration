@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_0539c896_84fd_497d_98a0_759d5ec4b7e6_Output_Variables_receivedFiles = { _?: Binary }
+

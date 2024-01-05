@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd 
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd 
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<!-- ### Inbound Connection properties ### -->
+	<http:listener-config name="vems-mule-caqh-papi-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="vems-mule-caqh-papi-config" api="resource::a49d2bd5-98e7-47cb-be7d-a153583e60a6:vems-mule-caqh-papi:1.0.0:raml:zip:vems-mule-caqh-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+	<sftp:config name="SFTP_caqh_Config" doc:name="SFTP Config" doc:id="0a3ac037-3150-4473-b4aa-f3d1230489b8" >
+		<sftp:connection host="${caqh.sftp.host}" username="${secure::caqh.sftp.user}" password="${secure::caqh.sftp.password}" workingDir="/"/>
+	</sftp:config>
+    <!-- ### Outbound Connection properties ### -->
+    <!-- ### Secure properties ### -->
+    <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="f9be919b-c2fb-4d49-9a6f-025ca0ba1ab8" file="config/${env}-application.yaml" key="${encrypt.key}">
+        <secure-properties:encrypt algorithm="Blowfish" />
+    </secure-properties:config>
+    
+    <!-- ### Common Regular properties ### -->
+    <configuration-properties doc:name="Configuration properties" doc:id="2ab35503-a747-4460-be7e-cea45d4c0e6d" file="config/application.yaml" />
+    <configuration-properties doc:name="Configuration properties" doc:id="44548a9d-0128-4b37-8dab-dcbd85c68617" file="config/${env}-application.yaml" />
+    <json-logger:config name="JSON_Logger_Config" doc:name="JSON Logger Config" doc:id="d7f47c8e-ca25-4849-a7be-cac27050f184" environment="${env}" />
+    <api-gateway:autodiscovery apiId="${api.id}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="a1420b1c-ef4d-454f-83f4-b47490e0fb3a" flowRef="vems-mule-caqh-papi-main" />
+    
+    <!--  ### Global Properties -->
+    <global-property doc:name="Global Property" doc:id="5c2dca64-9bee-4fe7-a2fe-32f8f855ed7f" name="env" value="dev" />
+    <global-property doc:name="Global Property" doc:id="016399af-aa00-4ce4-83cc-ac82b1b2005f" name="encrypt.key" value="1" />
+    <global-property doc:name="Global Property" doc:id="db3ed0d5-cc5b-42e1-98bd-36d9f84e90f6" name="api.id" value="1" />
+    <http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="5b3bcb9b-c7c3-47c4-bf7c-f51226b61b91" basePath="${pnmSapi.url}" responseTimeout="${http-request.pnmSapiTimeout}">
+		<http:request-connection host="${pnmSapi.host}" port="${pnmSapi.port}" protocol="HTTPS"/>
+	</http:request-config>
+</mule>

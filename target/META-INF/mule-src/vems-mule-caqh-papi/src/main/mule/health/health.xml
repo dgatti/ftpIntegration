@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+
+<flow name="get:\health:vems-mule-caqh-papi-config">
+        <ee:transform doc:name="pnm-papi-health" doc:id="882e72d0-a40b-432a-9c0d-0f2107f4e3b1">
+			<ee:message>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="pnm-papi-health" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"appName": "vems-mule-pnm-sapi",
+	"appVersion": "unknown",
+	"appStatus": "UNIMPLEMENTED_HEALTH",
+	"timestamp": now()
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform>
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"appName": p("api.appArtifactId") default "",
+	"appVersion": p("api.appVersion") default "",
+	"appStatus": "RUNNING",
+	"timestamp": now(),
+	"integrations": [
+    	vars."pnm-papi-health", 
+	]
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

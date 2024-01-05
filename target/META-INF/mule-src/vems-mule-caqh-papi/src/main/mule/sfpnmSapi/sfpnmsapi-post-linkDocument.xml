@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="sfpnmsapi-post-linkDocument" doc:id="e62de31c-2872-4e16-b22d-4c2530e70ace" >
+		<http:request method="GET" doc:name="sfpnmsapi post careProviderAdverseAction" doc:id="e9750896-4d6e-4657-afc2-2e68b82bcef6" config-ref="HTTP_Request_configuration" path="/method" />
+	</sub-flow>
+</mule>

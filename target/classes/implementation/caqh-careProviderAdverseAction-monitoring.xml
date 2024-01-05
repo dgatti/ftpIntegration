@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd">
+	<flow name="caqh-careProviderAdverseAction-monitoring" doc:id="f2a9d541-f2fb-4411-b341-a49c2bdeb4d5">
+		<scheduler doc:name="Scheduler" doc:id="93711c60-03e1-4b71-8f09-93851120567a">
+			<scheduling-strategy>
+				<fixed-frequency frequency="1" timeUnit="HOURS" />
+			</scheduling-strategy>
+		</scheduler>
+		<json-logger:logger doc:name="Start careProviderAdverseAction Batch" doc:id="51716ed0-d6b4-4a81-9e59-1ef254f16147" config-ref="JSON_Logger_Config" message="Start careProviderAdverseAction Batch" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="caqh-sftp-sactionRetrieval" doc:id="d73fc300-86fc-4acb-a5ca-5480a1593859" name="caqh-sftp-sactionRetrieval" />
+		<set-variable value="#[payload]" doc:name="receivedFiles" doc:id="339abcc8-eab9-41f5-a2cf-a784e1a0edf0" variableName="receivedFiles" />
+<set-variable value='#[(filterObject(vars.receivedFiles, ((value, key, index) -&gt;&#10;	((key contains ".txt") and (!(key contains "_MAC")))&#10;)) mapObject (fileName: $$)).fileName]' doc:name="fileNameCSV" doc:id="536319e2-c667-470d-922d-c9854597d12e" variableName="fileNameCSV"/>
+		<!-- [STUDIO:"asyncRenameFileSFTP"]		<flow-ref doc:name="asyncRenameFileSFTP" doc:id="1560e7d4-7cdd-47c6-8e78-d28d3efe5c63" name="asyncRenameFileSFTP" /> [STUDIO] -->
+		<ee:transform doc:name="extract csv" doc:id="b69d43c4-6a06-44d8-9248-f344416d1cbb">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output text/plain
+var zipContent = vars."receivedFiles"
+var csvFileName = vars.fileNameCSV
+//var csvFileName = (vars.fileName splitBy ("."))[0] ++ p("app.careProviderAdverseAction.pipe-delimited-filename")
+fun extractTextFromZip(fileMap: Object): String =
+    fileMap[csvFileName] default ""
+---
+extractTextFromZip(zipContent)]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="csvIntoJson" doc:id="b9dc8826-9588-4dd3-a6f0-019734e347b8">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var lines = payload splitBy "\r\n"
+var headers = lines[0] splitBy "|"
+var data = lines[1 to -1] map ((line) -> 
+  headers zip (line splitBy "|") 
+    reduce (item, acc={}) -> acc ++ { (item[0]): item[1] }
+)
+
+---
+data]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="receivedFilesCL"><![CDATA[//read(payload[0],'application/txt')
+read(payload[0], 'text/plain')]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="build CareProviderAdverseAction Rows" doc:id="bf5c04ab-28cb-4d82-8c90-e1ff4c865a58">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+import * from dw::core::Strings
+output application/json 
+---
+payload map (element, index) -> {
+
+  'CAQHId' : element.CAQHProviderID,
+  'NPI' : element.NPI  default '',
+  'LicenseNumber' : element.SanctionLicenseNumber  default '',
+  'ProviderType' : element.SanctionProviderType  default '',
+  'BoardName' : element.SanctionBoardName  default '',
+  'Jurisdiction' : element.SanctionReportingState  default '',
+  'IncidentDate' : replaceAll (element.SanctionPublishDate, "/", "-") as Date {format: "M-d-yy"} as Date {format: "yyyy-M-d"} default '',
+  'SanctionCode' : element.SanctionCode  default '',
+  'SanctionImageName' : element.SanctionImageName default '',
+  'EffectiveFrom' : replaceAll (element.SanctionEffectiveDate, "/", "-") as Date {format: "M-d-yy"} as Date {format: "yyyy-M-d"} default '',
+  'IncidentReportedDate' : replaceAll (element.SanctionPostedDate, "/", "-") as Date {format: "M-d-yy"} as Date {format: "yyyy-M-d"} default '',
+  'RosterFlag' : if(element.CAQHProviderID == "Active") true else false,
+  'SourceSystem' : "CAQH ProView",
+  'SourceSystemIdentifier' : element.CAQHProviderID,
+  'Status' : "New",
+  'Name': element.LastName ++ " | " ++ element.FirstName
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="filterSectionImageNameEmptyOnCareProvidersRows" doc:id="0535e6d8-ea75-4bc7-b332-45f9c70b1231" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload filter (item) -> item.SanctionImageName != ""]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<json-logger:logger doc:name="Post CareProviderAction Payload" doc:id="7fa2f56a-ebfb-4408-a4ce-0dd2e53ad8a1" config-ref="JSON_Logger_Config" message="Post CareProviderAction Payload" tracePoint="BEFORE_REQUEST" >
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    //payload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<flow-ref doc:name="Headers Referemce" doc:id="4ead8e11-f5d2-4f10-9420-df33da85f95f" name="SetHeadersSfpnm" />
+		<flow-ref doc:name="sfpnmsapi-post-careProviderAdverseAction" doc:id="ddf0d720-c807-4f1c-bb04-c8703ac3197a" name="request-sapi-care-provider"/>
+		<choice doc:name="Choice" doc:id="d135bfad-2517-446e-a0b4-3c696784558f" >
+			<when expression="#[!isEmpty(payload)]">
+				<ee:transform doc:name="toJSON" doc:id="a26c0741-273c-4234-8825-12359b0af511">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<json-logger:logger doc:name="Initialize ContentVersion POST process" doc:id="94ce5162-dc79-4f74-b020-008991b439d5" config-ref="JSON_Logger_Config" message="CareProviderAdverseAction Response Payload : Initialize ContentVersion POST process" tracePoint="FLOW" />
+				<flow-ref doc:name="UploadDocument" doc:id="084a6a7b-c28e-480d-8984-068ec43b1b32" name="UploadDocument" />
+				<json-logger:logger doc:name="Finalized ContentVersion POST process" doc:id="e0f9429a-1ab6-4a4b-9f4f-4818453d658b" config-ref="JSON_Logger_Config" message="Finalized ContentVersion POST process / End careProviderAdverseAction Batch" tracePoint="FLOW" />
+			</when>
+			<otherwise >
+				<json-logger:logger doc:name="Initialize ContentVersion POST process" doc:id="591d6a5b-a495-4ee8-83a3-9710c6b9d6e4" config-ref="JSON_Logger_Config" message="Post careProviderAdverseAction did not return any Records" tracePoint="FLOW" >
+					<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+}]]]></json-logger:content>
+				</json-logger:logger>
+			</otherwise>
+		</choice>
+	</flow>
+	<sub-flow name="asyncRenameFileSFTP" doc:id="9d463ae7-0640-4228-8732-95c352c7554e">
+		<async doc:name="Async" doc:id="04c87d5e-db41-4b54-96b5-e845cd6b207d">
+			<try doc:name="Try" doc:id="e3affff6-8453-4f2d-b4ba-063c39f25f28">
+				<sftp:move doc:name="Move" doc:id="654d20dc-fbf5-48d6-a5e6-4743824c6574" config-ref="SFTP_caqh_Config" sourcePath="#[vars.path]" targetPath='#[vars.path ++ ".processed"]' />
+				<json-logger:logger doc:name="Logger" doc:id="53b52781-2a2e-435f-91af-cf98ee815ed3" config-ref="JSON_Logger_Config" message="AfterMove" priority="ERROR" />
+				<error-handler>
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fea9321f-cbc4-41f3-a14c-c08cca3c4f4b">
+						<json-logger:logger doc:name="Logger" doc:id="1d8ad1e9-09ae-41d7-ab95-624c71a537f6" config-ref="JSON_Logger_Config" message="Upload Document Process" />
+						<ee:transform doc:name="Transform Message" doc:id="45f75caa-3e99-45dd-9e73-b433fdd3e2a7">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</on-error-propagate>
+				</error-handler>
+			</try>
+		</async>
+	</sub-flow>
+	<sub-flow name="UploadDocument" doc:id="0539c896-84fd-497d-98a0-759d5ec4b7e6" >
+		<foreach doc:name="For Each" doc:id="6ad7142e-0dd8-49f3-aa03-0ed2e16e1e16">
+			<try doc:name="Try" doc:id="e96c1e5e-e331-4999-85b3-96dcc5d2daae" >
+				<set-variable value="#[payload]" doc:name="itemPayload" doc:id="9e1a9db4-a0e2-4ec1-ad10-0a9c750d4e42" variableName="itemPayload" />
+				<ee:transform doc:name="getFile and convert to Base64" doc:id="1c018b37-3d90-4e04-8013-27487737be35">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+import * from dw::core::Binaries
+
+---
+
+toBase64((vars.receivedFiles filterObject ((value, key) -> ((key contains (vars.itemPayload.SanctionImageName)) and (!(key contains "_MAC")))))[0])
+
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	"Title": (vars.itemPayload.SanctionImageName splitBy("."))[0],&#10;	"PathOnClient": vars.itemPayload.SanctionImageName,&#10;	"VersionData": payload&#10;}]' doc:name="buildContentVersion payload" doc:id="f2b182ea-1296-425b-9846-35edd739939c" />
+				<json-logger:logger doc:name="Posting Content Version" doc:id="870b4e10-793e-48b3-a157-2dc95549d171" config-ref="JSON_Logger_Config" message="Posting Content Version" tracePoint="FLOW">
+				<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    //PathOnClient: JSONLoggerModule::stringifyNonJSON(payload.PathOnClient) 
+}]]]></json-logger:content>
+			</json-logger:logger>
+				<flow-ref doc:name="post-content-version" doc:id="6ada9a2e-bac9-4dc2-a2c6-0a50167e906e" name="post-content-version" />
+				<set-variable value="#[payload.recordId]" doc:name="contentVersionId" doc:id="89915737-1301-48d4-acbc-0b2c59ffda16" variableName="contentVersionId" />
+				<json-logger:logger doc:name="End Request ContentVersion" doc:id="01bdb8fb-6d3d-4130-84bc-f07ba994a593" config-ref="JSON_Logger_Config" message="End Request ContentVersion">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    contentVersionId: JSONLoggerModule::stringifyNonJSON(vars.contentVersionId) 
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<flow-ref doc:name="get-content-version-by-id-pnm-sapi-flow" doc:id="eced6958-bbb6-49a3-80fa-2401cff94c33" name="get-content-version-by-id-pnm-sapi-flow" />
+				<ee:transform doc:name="build LinkDocument payload" doc:id="11bd6ffb-eab8-4fe4-8ff1-d4e75b9d66d3">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	LinkedEntityId: vars.itemPayload.Id,
+    ContentDocumentId: payload[0].ContentDocumentId
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+				<json-logger:logger doc:name="Posting Link Document" doc:id="1ea3c030-219f-441a-8586-96afe0f71cb0" config-ref="JSON_Logger_Config" message="Posting Link Document">
+					<json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+				</json-logger:logger>
+				<flow-ref doc:name="request-linkDocument" doc:id="c3832266-3e88-4d67-ad71-780075d347bf" name="request-linkDocument" />
+				<ee:transform doc:name="output" doc:id="b740d6b3-e2f7-412e-a66d-1d85b9f8a536">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+				<json-logger:logger doc:name="Logger" doc:id="e4460df0-f87c-4092-baa0-d917493fbbff" config-ref="JSON_Logger_Config" message="After request linkDocument" />
+				<error-handler >
+					<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9c179548-981e-4380-a206-57a8e76619c7" type="ANY" >
+						<json-logger:logger doc:name="Logger" doc:id="7916f401-893c-4c89-b3cb-7bd06f634aff" config-ref="JSON_Logger_Config" message="Upload Document Process"/>
+						<ee:transform doc:name="Transform Message" doc:id="f73e328b-8ee6-4bbf-8d23-82ee3a1433a9" >
+							<ee:message >
+								<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</on-error-continue>
+				</error-handler>
+			</try>
+		</foreach>
+	</sub-flow>
+</mule>

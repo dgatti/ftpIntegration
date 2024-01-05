@@ -1,0 +1,9 @@
+caqh:
+ sftp:
+   host: "sftp-demo.nonprod.caqh.org"
+   user: "![bJpd2vE+1d5PdlSR4D8CWg==]" 
+   password: "![MaximusDemo@123]"
+
+app:
+  careProviderAdverseAction:
+    pipe-delimited-filename: "Sanctions_Extracts/Sample_Sanction_Extracts_V2.txt"

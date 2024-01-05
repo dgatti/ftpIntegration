@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:compression="http://www.mulesoft.org/schema/mule/compression" xmlns:sftp="http://www.mulesoft.org/schema/mule/sftp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sftp/current/mule-sftp.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	<sub-flow name="caqh-sftp-sactionRetrieval" doc:id="78be9123-7c35-47d6-b073-d529a862e64f" >
+		<try doc:name="Try" doc:id="4cc9a679-2326-48fa-a55d-084de42418a9" >
+			<json-logger:logger doc:name="Logger" doc:id="77cee835-5cb5-4fee-88cc-09dc3d908392" config-ref="JSON_Logger_Config" message="#[&quot;Before FTP Call. SFTP Directory&quot; ++ &quot; &quot; ++ p('caqh.sftp.directory')]"/>
+									<sftp:list doc:id="2a04e993-b241-44f7-b86e-094ce64f89b8" config-ref="SFTP_caqh_Config" directoryPath="${caqh.sftp.directory}"/>
+			<json-logger:logger doc:name="AfterListFiles" doc:id="119fbbc8-5d2b-4473-a833-66e1278dfc8c" config-ref="JSON_Logger_Config" message="AfterListFiles" tracePoint="AFTER_REQUEST">
+				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+}]]]></json-logger:content>
+				</json-logger:logger>
+			<set-variable value="#[payload[0].attributes.name]" doc:name="fileName" doc:id="e57b8e60-f7f1-4424-94fd-18cdc213990f" variableName="fileName"/>
+			<set-variable value="#[payload[0].attributes.path]" doc:name="path" doc:id="d6f7b031-df52-4b63-9b8f-57957043dc7e" variableName="path"/>
+			<sftp:read doc:name="Read" doc:id="d3e77d53-2b9d-40c4-967e-084ab582b758" config-ref="SFTP_caqh_Config" path="#[payload[0].payload]" />
+			<json-logger:logger doc:name="AfterReadFiles" doc:id="23b5cdd7-39fc-4b74-a125-34c1ee657228" config-ref="JSON_Logger_Config" message="AfterReadFiles" tracePoint="AFTER_REQUEST" >
+				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<compression:extract doc:name="Extract" doc:id="d1463a7f-4ef6-44d0-bbfa-0b93bbfc2fb3">
+					<compression:extractor>
+				<compression:zip-extractor />
+			</compression:extractor>
+		</compression:extract>
+			<json-logger:logger doc:name="AfterExtractFiles" doc:id="89e9f3c2-396b-4ae4-a7bb-45cfea8a9fc7" config-ref="JSON_Logger_Config" message="AfterExtractFiles" >
+				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+}]]]></json-logger:content>
+			</json-logger:logger>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="63083007-e65e-40e7-ac74-5221b2c9abc6" type="ANY">
+					<set-variable value="404" doc:name="Set httpStatus" doc:id="4b112c62-2584-4943-a8cd-38173ba24257" variableName="httpStatus" />
+					<ee:transform doc:name="Transform Message" doc:id="5dbc63b6-1921-4ce1-a004-ecb84d061ce3">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+</mule>

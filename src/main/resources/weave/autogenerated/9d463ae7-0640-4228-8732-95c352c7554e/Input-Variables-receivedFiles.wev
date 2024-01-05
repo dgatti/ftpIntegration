@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_9d463ae7_0640_4228_8732_95c352c7554e_Input_Variables_receivedFiles = { _?: Binary }
+

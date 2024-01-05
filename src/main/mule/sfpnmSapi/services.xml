@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="SetHeadersSfpnm" doc:id="df7d7de0-3e06-4b4f-934c-eb33a7662b83" >
+		<set-variable value="#[%dw 2.0&#10;&#10;output json&#10;---&#10;{&#10;	&quot;client_secret&quot; : Mule::p('secure::app.sapi.credentials.clientSecret'),&#10;	&quot;client_id&quot; : Mule::p('secure::app.sapi.credentials.clientId')&#10;}]" doc:name="Set Headers sfpnm-sapi" doc:id="0438e8a2-b458-4dbf-8fac-6a6485407179" variableName="requestSapiHeaders" />
+	</sub-flow>
+	<sub-flow name="post-content-version" doc:id="9790ddd5-6d28-47c1-a33b-280ac3a6da7d" >
+		<logger level="DEBUG" doc:name="Logger" doc:id="657f6623-cbe0-47f1-aefc-2624debc62c3" message='#[output application/json&#10;---&#10;{&#10; "flow": "Starting UpdateUrl",&#10; "correlationId": correlationId,&#10; "payload": payload&#10;}]' />
+		<try doc:name="Try" doc:id="79f1ac89-dafb-436c-a948-31120fa4265e" >
+			<until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="28fda4cc-82e0-40cc-a0da-4d3d14b965a0" millisBetweenRetries="${until.MsBwRetries}" >
+				<http:request method="POST" doc:name="Request" doc:id="89566e4f-889e-495c-827a-6bc00d8dabf1" config-ref="HTTP_Request_configuration" path="${pnmSapi.methods.content-version}" outputMimeType="application/json" outputEncoding="UTF-8">
+			<http:headers><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1621713d-34e7-405c-9133-426c9f43a81e" >
+					<logger level="INFO" doc:name="Error Logger" doc:id="00fbcbb8-6929-41a7-83f2-619fe1d5f5d3" message='#[(error.errorType.asString default "") ++  " : " ++ error.detailedDescription]' />
+					<ee:transform doc:name="error payload" doc:id="1dd838b6-4418-4ed9-a9dc-e52651231c75" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="DEBUG" doc:name="Logger1" doc:id="1bc96a42-36c2-4aee-8b3e-6389b8842f73" message='#[output application/json&#10;---&#10;{&#10; "flow": "Ending UpdateUrl",&#10; "correlationId": correlationId,&#10; "payload": payload&#10;}]' />
+	</sub-flow>
+	<sub-flow name="request-linkDocument" doc:id="acb99d94-83f6-4ce2-bd89-921d6b671e46" >
+		<logger level="DEBUG" doc:name="Logger" doc:id="64d170a5-3ed5-4a1a-b562-11edefdf9ec7" message='#[output application/json&#10;---&#10;{&#10; "flow": "Starting UpdateUrl",&#10; "correlationId": correlationId,&#10; "payload": payload&#10;}]' />
+		<try doc:name="Try" doc:id="d37c2a01-b4c3-4bb2-bed7-8ec1d91024cb" >
+			<until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="b331e82e-8748-441a-b9a7-e7c3c076726a" millisBetweenRetries="${until.MsBwRetries}" >
+				<http:request method="POST" doc:name="Request" doc:id="e4760636-c9e4-4b1e-8d60-ac871bb19cfe" config-ref="HTTP_Request_configuration" path="${pnmSapi.methods.contentDocument-link}" outputMimeType="application/json" outputEncoding="UTF-8">
+			<http:headers><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b5719a93-6fa3-4671-a18e-aa78ec4165ac" >
+					<logger level="INFO" doc:name="Error Logger" doc:id="4682e179-3e2b-4fa1-8484-ea47f3b7ae04" message='#[(error.errorType.asString default "") ++  " : " ++ error.detailedDescription]' />
+					<ee:transform doc:name="error payload" doc:id="17d64575-bac8-4745-adb1-327e6bc1c651" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="DEBUG" doc:name="Logger1" doc:id="9072a5e8-d802-4045-97e7-2a91a581b4a2" message='#[output application/json&#10;---&#10;{&#10; "flow": "Ending UpdateUrl",&#10; "correlationId": correlationId,&#10; "payload": payload&#10;}]' />
+	</sub-flow>
+	<sub-flow name="request-sapi-care-provider" doc:id="c0b3da09-3b80-4ee0-83fe-d7ed07cb001b" >
+		<try doc:name="Try" doc:id="2f343a9d-5926-4174-bae9-81ab426f898f" >
+			<until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="096aaea6-4592-475b-9f48-251cce47cc99" millisBetweenRetries="${until.MsBwRetries}" >
+				<http:request method="POST" doc:name="Request" doc:id="6a53fecb-b305-4ca6-8e96-ab2aafcf4051" config-ref="HTTP_Request_configuration" path="${pnmSapi.methods.care}">
+			<http:headers><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+		</http:request>
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0e94f822-91c9-41d0-b546-b63a889511e4" >
+					<logger level="INFO" doc:name="Error Logger" doc:id="c807e7bf-f05f-470c-921a-357fa654d076" message='#[(error.errorType.asString default "") ++  " : " ++ error.detailedDescription]' />
+					<ee:transform doc:name="error payload" doc:id="be28d3be-c8dd-4573-a14a-1fad02ed9ca2" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+	</sub-flow>
+	<sub-flow name="get-content-version-by-id-pnm-sapi-flow" doc:id="96773157-a0c1-48ed-a296-983417b4126f" >
+		<logger level="DEBUG" doc:name="Logger" doc:id="afe6025d-04bd-4f94-9d35-3dcc9cfd2a41" message='#[output application/json&#10;---&#10;{&#10; "flow": "Starting UpdateUrl",&#10; "correlationId": correlationId,&#10; "payload": payload&#10;}]' />
+		<try doc:name="Try" doc:id="08771c64-2215-4796-aac4-766d10936b5f" >
+			<until-successful maxRetries="${until.MaxRetries}" doc:name="Until Successful" doc:id="79b5bb56-3796-457b-a485-4c6d6ced5d0a" millisBetweenRetries="${until.MsBwRetries}" >
+				<http:request method="GET" doc:name="get-content-version-by-id-pnm-sapi" doc:id="91c7557b-c704-467b-8109-c063516eb2a5" config-ref="HTTP_Request_configuration" path="${pnmSapi.methods.get-content-version}" correlationId="#[correlationId]" responseTimeout="10000" outputMimeType="application/json" outputEncoding="UTF-8">
+			<http:headers><![CDATA[#[output application/java
+---
+vars.requestSapiHeaders]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"id" : vars.contentVersionId
+}]]]></http:uri-params>
+		</http:request>
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="581eb9e6-2484-451e-b446-c6f790c48214" >
+					<logger level="INFO" doc:name="Error Logger" doc:id="d7797161-b77f-4e35-bc99-923fd72149fd" message='#[(error.errorType.asString default "") ++  " : " ++ error.detailedDescription]' />
+					<ee:transform doc:name="error payload" doc:id="1bde7582-6c2d-4cdf-abe0-7c4d91023a62" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	errMsg: error.errorMessage,
+	errDesc: error.description,
+	errType: error.errorType.asString
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="DEBUG" doc:name="Logger1" doc:id="16499c8d-eb9f-434e-94bf-c2552148d93f" message='#[output application/json&#10;---&#10;{&#10; "flow": "Ending UpdateUrl",&#10; "correlationId": correlationId,&#10; "payload": payload&#10;}]' />
+	</sub-flow>
+</mule>
