@@ -1,13 +1,15 @@
 api:
   id: "64987"
   
+env.port: "${https.port}"
+  
 caqh:
  sftp:
    host: "sftp.proview.caqh.org"
    #host: "sftp-demo.nonprod.caqh.org"
-   user: "![/3ZeyBEJaW7TFcRB6KR03g==]"
+   user: "![oQOtzYYubt/4ejgpHerS3g==]"
    #user: "![bJpd2vE+1d5PdlSR4D8CWg==]" 
-   password: "![va6Bo2PTX9SPt1yapxy9fA==]"
+   password: "![zaykkqapvo1H9D7esyNkKQ==]"
    #password: "![/rAReTkf8pOsXwRadUPtrA==]"
    directory: "/Outgoing"
    

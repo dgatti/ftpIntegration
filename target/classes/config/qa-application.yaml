@@ -1,5 +1,7 @@
 api:
   id: "64988"
+  
+env.port: "${https.port}"
 
 #caqh:
 # sftp:
@@ -12,8 +14,8 @@ api:
 caqh:
  sftp:
    host: "sftp.proview.caqh.org"
-   user: "![/3ZeyBEJaW7TFcRB6KR03g==]"
-   password: "![va6Bo2PTX9SPt1yapxy9fA==]"
+   user: "![oQOtzYYubt/4ejgpHerS3g==]"
+   password: "![zaykkqapvo1H9D7esyNkKQ==]"
    directory: "/Outgoing"
    
 pnmSapi:

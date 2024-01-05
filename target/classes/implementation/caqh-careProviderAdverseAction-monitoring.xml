@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sft
 	<flow name="caqh-careProviderAdverseAction-monitoring" doc:id="f2a9d541-f2fb-4411-b341-a49c2bdeb4d5">
 		<scheduler doc:name="Scheduler" doc:id="93711c60-03e1-4b71-8f09-93851120567a">
 			<scheduling-strategy>
-				<fixed-frequency frequency="1" timeUnit="HOURS" />
+				<cron expression="${scheduler.sync}"/>
 			</scheduling-strategy>
 		</scheduler>
 		<json-logger:logger doc:name="Start careProviderAdverseAction Batch" doc:id="51716ed0-d6b4-4a81-9e59-1ef254f16147" config-ref="JSON_Logger_Config" message="Start careProviderAdverseAction Batch" >

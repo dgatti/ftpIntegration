@@ -12,14 +12,24 @@ http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/m
 		<try doc:name="Try" doc:id="4cc9a679-2326-48fa-a55d-084de42418a9" >
 			<json-logger:logger doc:name="Logger" doc:id="77cee835-5cb5-4fee-88cc-09dc3d908392" config-ref="JSON_Logger_Config" message="#[&quot;Before FTP Call. SFTP Directory&quot; ++ &quot; &quot; ++ p('caqh.sftp.directory')]"/>
 									<sftp:list doc:id="2a04e993-b241-44f7-b86e-094ce64f89b8" config-ref="SFTP_caqh_Config" directoryPath="${caqh.sftp.directory}"/>
+			<ee:transform doc:name="RecovertMoreRecentFile" doc:id="a79453fd-fb6c-4c53-9df8-7f0cf11692ab">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+var name = payload filter ((item, index) -> item.attributes.name contains "CustomSanction")
+---
+name maxBy (item) -> (item.attributes.timestamp as LocalDateTime)]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
 			<json-logger:logger doc:name="AfterListFiles" doc:id="119fbbc8-5d2b-4473-a833-66e1278dfc8c" config-ref="JSON_Logger_Config" message="AfterListFiles" tracePoint="AFTER_REQUEST">
 				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
 {
 }]]]></json-logger:content>
 				</json-logger:logger>
-			<set-variable value="#[payload[0].attributes.name]" doc:name="fileName" doc:id="e57b8e60-f7f1-4424-94fd-18cdc213990f" variableName="fileName"/>
-			<set-variable value="#[payload[0].attributes.path]" doc:name="path" doc:id="d6f7b031-df52-4b63-9b8f-57957043dc7e" variableName="path"/>
-			<sftp:read doc:name="Read" doc:id="d3e77d53-2b9d-40c4-967e-084ab582b758" config-ref="SFTP_caqh_Config" path="#[payload[0].payload]" />
+			<set-variable value="#[payload.attributes.name]" doc:name="fileName" doc:id="e57b8e60-f7f1-4424-94fd-18cdc213990f" variableName="fileName"/>
+			<set-variable value="#[payload.attributes.path]" doc:name="path" doc:id="d6f7b031-df52-4b63-9b8f-57957043dc7e" variableName="path"/>
+			<sftp:read doc:name="Read" doc:id="d3e77d53-2b9d-40c4-967e-084ab582b758" config-ref="SFTP_caqh_Config" path="#[payload.payload]" />
 			<json-logger:logger doc:name="AfterReadFiles" doc:id="23b5cdd7-39fc-4b74-a125-34c1ee657228" config-ref="JSON_Logger_Config" message="AfterReadFiles" tracePoint="AFTER_REQUEST" >
 				<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
 {
