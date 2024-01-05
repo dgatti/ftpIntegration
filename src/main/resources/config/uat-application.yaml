@@ -1,16 +1,8 @@
 api:
-  id: "64988"
+  id: "65551"
   
-env.port: "${https.port}"
-
-#caqh:
-# sftp:
-#   host: "sftp-demo.nonprod.caqh.org"
-#   user: "![bJpd2vE+1d5PdlSR4D8CWg==]" 
-#   password: "![/rAReTkf8pOsXwRadUPtrA==]"
-#   directory: "Incoming/"
-
-
+env.port: "${https.private.port}"
+  
 caqh:
  sftp:
    host: "sftp.proview.caqh.org"
@@ -19,7 +11,7 @@ caqh:
    directory: "/Outgoing"
    
 pnmSapi:
-  host: "vems-mule-sfpnm-sapi-qa.usg-w1.gov.cloudhub.io"
+  host: "vems-mule-sfpnm-sapi-uat.usg-w1.gov.cloudhub.io"
   port: "443"
   url:  "/api/v1"
   methods:
@@ -31,11 +23,7 @@ pnmSapi:
 app:
   careProviderAdverseAction:
     pipe-delimited-filename: "Sanctions_Extracts/Sample_Sanction_Extracts_V2"
-    
-    
-
   sapi:
     credentials:
-      clientId: "![R4JlXwbQDn1tNeuUB9t/y9YYyRdKOikOoxTyyRVOFRT1MzLu0rfp6g==]"
-      clientSecret: "![rR5HLA+StUW2H7ZAsyS26M5pY2JOX4pMRVifWfunsd7qxgZagcWtLg==]"
-  
+      client_id: "![r/ISqTuPMde71DSpmXE5+jemplJ8WamqqXVj1ml0ru+4x4rg9gqVfQ==]"
+      client_secret: "![6zQuCPSRVype13dycEjVlj2RxPLn90nCC8NbTGljML46dWMCw8uC/g==]"

@@ -5,6 +5,8 @@ http:
 https:
   host: "0.0.0.0"
   port: "8082"
+  private:
+    port: "8092"
 
 api:
   groupId:      "${api.groupId}"
@@ -31,3 +33,6 @@ http-request:
   timeout: "30000"
   pnmSapiTimeout: "700000"
   
+#UTC Time 4hrs ahead of EST.  7:30 EST
+scheduler: 
+  sync: 0 29 11 ? * *
